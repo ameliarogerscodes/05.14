@@ -1,7 +1,12 @@
 package app;
 
+import com.mongodb.client.model.Accumulators;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Projections;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
+import org.bson.BsonArray;
+import org.bson.conversions.Bson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +68,35 @@ public class REServer {
             });
             // Get all sales for a specified postcode
             app.get("/sales/postcode/{postcode}", ctx -> {
-                // salesHandler.findSaleByPostCode(ctx, ctx.pathParam("postcode"));
+                String postcode = ctx.pathParam("postcode");
+                List<Document> list = props
+                        .find(new Document("post_code", postcode))
+                        .limit(20)
+                        .into(new ArrayList<>());
+                ctx.json(list);
+            });
+
+            app.get("/salesby", ctx -> {
+                List<Bson> pipeline = List.of(
+                        Aggregates.sample(100),
+                        Aggregates.group("$council_name", Accumulators.sum("total_sales", 1)),
+                        Aggregates.project(Projections.fields(
+                                Projections.computed("council", "$council_name"),
+                                Projections.computed("total_sales", "$total_sales")
+                        ))
+                );
+                List<Document> results = new ArrayList<>();
+                props.aggregate(pipeline).into(results);
+
+                ctx.json(results);
+            });
+            app.get("/sales/download_date/{download_date}", ctx -> {
+                String ID = ctx.pathParam("download_date");
+                List<Document> list = props
+                        .find(new Document("download_date", ID))
+                        .limit(100)
+                        .into(new ArrayList<>());
+                ctx.json(list);
             });
         });
 

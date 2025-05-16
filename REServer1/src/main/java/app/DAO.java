@@ -13,7 +13,7 @@ public class DAO {
 
     private DAO() {
         // Adjust URI & database name as needed
-        String uri = "mongodb://localhost:27017";
+        String uri = "mongodb+srv://tommasis:123@real-estate-project.wwjzxma.mongodb.net/";
         ConnectionString cs = new ConnectionString(uri);
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(cs)

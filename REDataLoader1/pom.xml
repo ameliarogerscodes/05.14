@@ -16,12 +16,7 @@
     </properties>
 
     <dependencies>
-        <!-- (Optional) your Javalin server deps -->
-        <dependency>
-            <groupId>io.javalin</groupId>
-            <artifactId>javalin-bundle</artifactId>
-            <version>6.5.0</version>
-        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>

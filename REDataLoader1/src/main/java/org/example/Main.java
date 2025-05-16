@@ -29,11 +29,11 @@ public class Main {
             .setAllowDuplicateHeaderNames(false)
             .build();
 
-    static final private String MONGO_URI    = "mongodb://localhost:27017";
+    static final private String MONGO_URI    = "mongodb+srv://tommasis:123@real-estate-project.wwjzxma.mongodb.net/";
     static final private String DB_NAME      = "realestate";
     static final private String COLL_NAME    = "properties";
     static final private String PATH_TO_FILE =
-            "/Users/ameliarogers/Desktop/05.13/REDataLoader/nsw_property_data.csv";
+            "nsw_property_data.csv";
 
     // Tune this based on memory and network speed
     static final private int BATCH_SIZE = 1000;
