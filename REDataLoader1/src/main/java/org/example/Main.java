@@ -33,7 +33,7 @@ public class Main {
     static final private String DB_NAME      = "realestate";
     static final private String COLL_NAME    = "properties";
     static final private String PATH_TO_FILE =
-            "/Users/mallorygilligan/Sydney/05.14/REDataLoader1/nsw_property_data.csv";
+            "nsw_property_data.csv";
 
     // Tune this based on memory and network speed
     static final private int BATCH_SIZE = 1000;
