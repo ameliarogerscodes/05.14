@@ -21,23 +21,25 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 
+// main class for all functionality
 public class Main {
-
+// load in csv format
     private static final CSVFormat CSV_FORMAT = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setHeader()
             .setSkipHeaderRecord(true)
             .setAllowDuplicateHeaderNames(false)
             .build();
 
+    // mongo db connection link
     static final private String MONGO_URI    = "mongodb+srv://tommasis:123@real-estate-project.wwjzxma.mongodb.net/";
-    static final private String DB_NAME      = "realestate";
-    static final private String COLL_NAME    = "properties";
+    static final private String DB_NAME      = "realestate"; // database name
+    static final private String COLL_NAME    = "properties"; // column name
     static final private String PATH_TO_FILE =
             "nsw_property_data.csv";
 
     // Tune this based on memory and network speed
     static final private int BATCH_SIZE = 1000;
-
+    // initial start
     public static void main(final String[] args) {
         System.out.println("Hello and welcome!");
 
