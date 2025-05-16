@@ -33,36 +33,36 @@ public class Main {
     static final private String DB_NAME      = "realestate";
     static final private String COLL_NAME    = "properties";
     static final private String PATH_TO_FILE =
-            "nsw_property_data.csv";
+            "/Users/mallorygilligan/Sydney/05.14/REDataLoader1/nsw_property_data.csv";
 
     // Tune this based on memory and network speed
     static final private int BATCH_SIZE = 1000;
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         System.out.println("Hello and welcome!");
 
         // 1) Create Mongo client once
-        ConnectionString connString = new ConnectionString(MONGO_URI);
-        MongoClientSettings settings = MongoClientSettings.builder()
+        final ConnectionString connString = new ConnectionString(MONGO_URI);
+        final MongoClientSettings settings = MongoClientSettings.builder()
                 .applyConnectionString(connString)
                 .build();
 
         try (MongoClient mongoClient = MongoClients.create(settings)) {
-            MongoDatabase database   = mongoClient.getDatabase(DB_NAME);
-            MongoCollection<Document> collection = database.getCollection(COLL_NAME);
+            final MongoDatabase database   = mongoClient.getDatabase(DB_NAME);
+            final MongoCollection<Document> collection = database.getCollection(COLL_NAME);
 
             // 2) Prepare CSV parser
-            Path csvFilePath = Paths.get(PATH_TO_FILE);
+            final Path csvFilePath = Paths.get(PATH_TO_FILE);
             try (CSVParser parser = CSVParser.parse(csvFilePath, StandardCharsets.UTF_8, CSV_FORMAT)) {
                 System.out.println("File opened; headers: " + parser.getHeaderNames());
 
                 // Batch buffer
-                List<Document> batch = new ArrayList<>(BATCH_SIZE);
+                final List<Document> batch = new ArrayList<>(BATCH_SIZE);
                 int totalCount = 0;
 
-                for (CSVRecord record : parser) {
-                    Map<String, String> recordMap = record.toMap();
-                    Document doc = new Document(recordMap);
+                for (final CSVRecord record : parser) {
+                    final Map<String, String> recordMap = record.toMap();
+                    final Document doc = new Document(recordMap);
                     batch.add(doc);
                     totalCount++;
 
