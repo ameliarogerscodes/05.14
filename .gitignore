@@ -1,6 +1,10 @@
 nsw_property_data.csv
+<<<<<<< Updated upstream
 .idea/compiler.xml
 .idea/compiler.xml
 .idea/encodings.xml
 .idea/misc.xml
 .idea/PMDPlugin.xml
+=======
+/.idea/libraries
+>>>>>>> Stashed changes
