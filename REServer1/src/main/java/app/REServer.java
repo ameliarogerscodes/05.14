@@ -31,6 +31,7 @@ public class REServer {
 
         var app = Javalin.create()
                 .get("/", ctx -> ctx.result("Real Estate server is running"))
+
                 .start(7070);
 
         // configure endpoint handlers to process HTTP requests
