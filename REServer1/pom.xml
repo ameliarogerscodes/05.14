@@ -14,26 +14,37 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!-- ✅ REQUIRED for Javalin OpenAPI plugins -->
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
+        <!-- Javalin core + static files, plugins -->
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin-bundle</artifactId>
             <version>6.6.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.16</version>
-        </dependency>
-
+        <!-- MongoDB driver -->
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
             <version>4.11.0</version>
         </dependency>
 
-        <!-- Javalin OpenAPI + Swagger + ReDoc -->
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
+        </dependency>
+
+        <!-- Javalin OpenAPI + Swagger + ReDoc plugins -->
         <dependency>
             <groupId>io.javalin.community.openapi</groupId>
             <artifactId>javalin-openapi-plugin</artifactId>
@@ -53,7 +64,7 @@
 
     <build>
         <plugins>
-            <!-- For fat jar -->
+            <!-- Build fat JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -67,7 +78,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>app.REServer</mainClass> <!-- Adjust if needed -->
+                                    <mainClass>app.REServer</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -78,7 +89,7 @@
                 </executions>
             </plugin>
 
-            <!-- Java compiler -->
+            <!-- Java compiler plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
