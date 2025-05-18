@@ -10,6 +10,7 @@
 <<<<<<< Updated upstream
       </profile>
     </annotationProcessing>
+
     <bytecodeTargetLevel>
       <module name="REServer" target="11" />
     </bytecodeTargetLevel>
