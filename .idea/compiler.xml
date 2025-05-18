@@ -9,6 +9,7 @@
         <module name="RealEstate" />
       </profile>
     </annotationProcessing>
+
     <bytecodeTargetLevel>
       <module name="REServer" target="11" />
     </bytecodeTargetLevel>

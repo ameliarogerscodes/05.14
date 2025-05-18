@@ -35,7 +35,7 @@ public class Main {
     static final private String DB_NAME      = "realestate"; // database name
     static final private String COLL_NAME    = "properties"; // column name
     static final private String PATH_TO_FILE =
-            "nsw_property_data.csv";
+            "/Users/sebastiantommasi/Downloads/nsw_property_data.csv";
 
     // Tune this based on memory and network speed
     static final private int BATCH_SIZE = 1000;
