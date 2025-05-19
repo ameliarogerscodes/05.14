@@ -1,8 +1,6 @@
 package app;
 
-import com.mongodb.client.model.Accumulators;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.*;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import org.bson.BsonArray;
@@ -16,6 +14,7 @@ import org.bson.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class REServer {
     private static final Logger LOG = LoggerFactory.getLogger(REServer.class);
@@ -23,11 +22,11 @@ public class REServer {
     public static void main(String[] args) {
         LOG.info("Starting Real Estate server…");
 
-        // 1) Initialize Mongo
         var dao = DAO.getInstance();
         MongoDatabase db = dao.getDatabase();
         // make sure this matches the collection you loaded
         MongoCollection<Document> props = db.getCollection("properties");
+        MongoCollection<Document> PCount = db.getCollection("Post_Search_Counter");
 
         var app = Javalin.create()
                 .get("/", ctx -> ctx.result("Real Estate server is running"))
@@ -42,10 +41,13 @@ public class REServer {
             // return a sale by sale ID
             app.get("/sales/{ID}", ctx -> {
                 String ID = ctx.pathParam("ID");
-                List<Document> list = props
-                        .find(new Document("property_id", ID))
-                        .into(new ArrayList<>());
-                ctx.json(list);
+                Document updatedDoc = props.findOneAndUpdate(
+                        new Document("property_id", ID),
+                        new Document("$inc", new Document("ID_Counter", 1)),
+                        new FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
+                );
+
+                ctx.json(updatedDoc);
             });
             app.get("/sales", ctx -> {
                 List<Document> list = props
@@ -53,6 +55,30 @@ public class REServer {
                         .limit(20)
                         .into(new ArrayList<>());
                 ctx.json(list);
+            });
+            app.get("/sales/ID_Count/{ID}", ctx -> {
+                List<Document> result = props.aggregate(List.of(
+                        Aggregates.match(new Document("property_id", ctx.pathParam("ID"))),
+                        Aggregates.project(Projections.fields(
+                                Projections.include("property_id"),
+                                Projections.excludeId(),
+                                Projections.computed("ID_Counter",
+                                        new Document("$ifNull", List.of("$ID_Counter", 0))
+                                )
+                        ))
+                )).into(new ArrayList<>());
+                ctx.json(result);
+            });
+            app.get("/sales/Post_Count/{post_code}", ctx -> {
+                String postcode = ctx.pathParam("post_code");
+
+                Document result = PCount.find(new Document("post_code", postcode)).first();
+
+                int count = result != null ? result.getInteger("search_count", 0) : 0;
+
+                ctx.json(new Document("post_code", postcode).append("search_count", count));
+                });
+
             });
             // get all sales records - could be big!
             app.get("/get", ctx -> {
@@ -74,6 +100,11 @@ public class REServer {
                         .find(new Document("post_code", postcode))
                         .limit(20)
                         .into(new ArrayList<>());
+                Document updateResult = PCount.findOneAndUpdate(
+                        new Document("post_code", postcode),
+                        new Document("$inc", new Document("search_count", 1)),
+                        new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)
+                );
                 ctx.json(list);
             });
 
@@ -98,7 +129,7 @@ public class REServer {
                         .limit(100)
                         .into(new ArrayList<>());
                 ctx.json(list);
-            });
+
         });
 
 
