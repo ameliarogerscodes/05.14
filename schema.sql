@@ -1,25 +1,18 @@
-USE mysql-520;
+-- schema.sql --
+DROP DATABASE IF EXISTS `mysql-520`;
+CREATE DATABASE `mysql-520`;
+USE `mysql-520`;
 
---
--- 1) Councils lookup
---
 CREATE TABLE IF NOT EXISTS councils (
                                         id   INT AUTO_INCREMENT PRIMARY KEY,
                                         name VARCHAR(100) NOT NULL
     );
 
---
--- 2) Property types lookup
---
 CREATE TABLE IF NOT EXISTS property_types (
                                               id   INT AUTO_INCREMENT PRIMARY KEY,
                                               type VARCHAR(50) NOT NULL
     );
 
---
--- 3) Properties master table
---    – property_id is now nullable and no longer UNIQUE
---
 CREATE TABLE IF NOT EXISTS properties (
                                           id                  INT AUTO_INCREMENT PRIMARY KEY,
                                           property_id         VARCHAR(20)   NULL,
@@ -32,27 +25,20 @@ CREATE TABLE IF NOT EXISTS properties (
     zoning              VARCHAR(10)   NULL,
     strata_lot_number   VARCHAR(50)   NULL,
     property_name       VARCHAR(100)  NULL,
-    id_counter INT DEFAULT 0
-
     FOREIGN KEY (council_id)
     REFERENCES councils(id)
     ON UPDATE CASCADE
     ON DELETE SET NULL,
-
     FOREIGN KEY (property_type_id)
     REFERENCES property_types(id)
     ON UPDATE CASCADE
     ON DELETE SET NULL
     );
 
--- Add an index on properties.property_id so it can be referenced by sales
+-- **no** IF NOT EXISTS here
 CREATE INDEX idx_properties_property_id
     ON properties(property_id);
 
---
--- 4) Sales table, linking back to properties.property_id
---    property_id is nullable and can repeat
---
 CREATE TABLE IF NOT EXISTS sales (
                                      id                  INT AUTO_INCREMENT PRIMARY KEY,
                                      property_id         VARCHAR(20)   NULL,
@@ -63,7 +49,6 @@ CREATE TABLE IF NOT EXISTS sales (
     nature_of_property  VARCHAR(10)   NULL,
     primary_purpose     VARCHAR(100)  NULL,
     legal_description   TEXT          NULL,
-
     FOREIGN KEY (property_id)
     REFERENCES properties(property_id)
     ON UPDATE CASCADE

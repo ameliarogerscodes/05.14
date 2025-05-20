@@ -10,9 +10,17 @@ public class SqlDAO {
 
     private SqlDAO() {
         try {
+            // explicitly load the driver class
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
             conn = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/realestate", "realestate", "secret"
+                    "jdbc:mysql://127.0.0.1:3307/mysql-520"
+                            + "?useSSL=false&allowPublicKeyRetrieval=true",
+                    "root",
+                    ""
             );
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("MySQL driver not found on classpath", e);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to connect to SQL DB", e);
         }

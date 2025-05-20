@@ -3,7 +3,7 @@ version: '8.4.3'
 services:
   mysql:
     image: mysql:8.0.34
-    container_name: "mysql-520"            # ← as requested
+    container_name: mysql-520
     ports:
       - "3307:3306"
     environment:

@@ -1,118 +1,94 @@
 package app;
 
-import com.mongodb.client.model.*;
 import io.javalin.Javalin;
-import io.javalin.config.JavalinConfig;
-import org.bson.BsonArray;
-import org.bson.conversions.Bson;
+import static io.javalin.apibuilder.ApiBuilder.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import static io.javalin.apibuilder.ApiBuilder.*;
+
 
 public class REServer {
     private static final Logger LOG = LoggerFactory.getLogger(REServer.class);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         LOG.info("Starting Real Estate server…");
 
-        var dao = SqlDAO.getInstance(); // your SQL connection manager
+        // grab your singletons/DAOs
+        SqlDAO dao = SqlDAO.getInstance();
         Connection conn = dao.getConnection();
-
         PropertyDAO propertyDAO = new PropertyDAO(conn);
         PostCodeDAO postcodeSearchDAO = new PostCodeDAO(conn);
 
+        Javalin app = Javalin.create(cfg -> {
+            // set JSON as the default content type
+            cfg.http.defaultContentType = "application/json";
 
-        var app = Javalin.create()
-                .get("/", ctx -> ctx.result("Real Estate server is running"))
+            // define all your endpoints in one place
+            cfg.router.apiBuilder(() -> {
+                get("/", ctx -> ctx.result("Real Estate server is running"));
 
-                .start(7070);
+                get("/sales/{ID}", ctx -> {
+                    String id = ctx.pathParam("ID");
+                    var p = propertyDAO.findById(id);
+                    if (p == null) {
+                        ctx.status(404).result("Property not found");
+                    } else {
+                        ctx.json(p);
+                    }
+                });
 
-        // configure endpoint handlers to process HTTP requests
-        JavalinConfig config = new JavalinConfig();
-        config.router.apiBuilder(() -> {
-            // Sales records are immutable hence no PUT and DELETE
+                get("/sales", ctx -> {
+                    List<Property> all = propertyDAO.findAll();
+                    ctx.json(all);
+                });
 
-            // return a sale by sale ID
-            app.get("/sales/{ID}", ctx -> {
-                String ID = ctx.pathParam("ID");
-                Property updatedDoc = propertyDAO.findById(ID);
-                ctx.json(updatedDoc);
+                get("/sales/ID_Count/{ID}", ctx -> {
+                    String id = ctx.pathParam("ID");
+                    int count = propertyDAO.findIDCount(id);
+                    ctx.json(Map.of("property_id", id, "id_counter", count));
+                });
+
+                // example POST to hard-coded record
+                post("/post", ctx -> {
+                    Property doc = new Property(
+                            0,
+                            "123456",
+                            "123 Fake Street",
+                            "2000",
+                            1,
+                            2,
+                            new BigDecimal("500"),
+                            "H",
+                            "R2",
+                            "Lot 1",
+                            "Sunny Villa"
+                    );
+                    propertyDAO.insert(doc);
+                    ctx.status(201).json(doc);
+                });
+
+                get("/sales/postcode/{postcode}", ctx -> {
+                    String pc = ctx.pathParam("postcode");
+                    postcodeSearchDAO.incrementAndReturnCount(pc);
+                    List<Property> list = propertyDAO.findByPostcode(pc);
+                    ctx.json(list);
+                });
+
+                get("/salesby", ctx -> {
+                    ctx.json(propertyDAO.findSellerValues());
+                });
+
+                get("/sales/download_date/{download_date}", ctx -> {
+                    String date = ctx.pathParam("download_date");
+                    ctx.json(propertyDAO.findByDownloadDate(date));
+                });
             });
-            app.get("/sales", ctx -> {
-                List<Property> list = propertyDAO.findAll();
-                ctx.json(list);
-            });
-            app.get("/sales/ID_Count/{ID}", ctx -> {
-                String ID = ctx.pathParam("ID");
-                int result = propertyDAO.findIDCount(ID);
-                ctx.json(Map.of(
-                        "property_id", ID,
-                        "id_counter", result
-                ));
-            });
-
-        });
-            app.get("/sales/Post_Count/{post_code}", ctx -> {
-                String postcode = ctx.pathParam("post_code");
-
-                int result = postcodeSearchDAO.getCount(postcode);
-                ctx.json(new Document("post_code", postcode).append("search_count", result));
-
-            });
-//            app.get("/get", ctx -> {
-//                List<Document> list = props
-//                    .find(new Document("property_id", 1))
-//                    .into(new ArrayList<>());
-//            ctx.json(list);
-//        });
-            // create a new sales record
-        app.post("/post", ctx -> {
-            Property doc = new Property(
-                    0,
-                    "123456",
-                    "123 Fake Street",
-                    "2000",
-                    1,
-                    2,
-                    new BigDecimal("500"),
-                    "H",
-                    "R2",
-                    "Lot 1",
-                    "Sunny Villa"
-            );
-            propertyDAO.insert(doc);
-            ctx.status(201).json(doc);
-        });
-
-        // Get all sales for a specified postcode
-            app.get("/sales/postcode/{postcode}", ctx -> {
-                String postcode = ctx.pathParam("postcode");
-                List<Property> list = propertyDAO.findByPostcode(postcode);
-                int updateResult = postcodeSearchDAO.incrementAndReturnCount(postcode);
-                ctx.json(list);
-            });
-
-            app.get("/salesby", ctx -> {
-                List<SellerCount> list = propertyDAO.findSellerValues();
-                ctx.json(list);
-            });
-            app.get("/sales/download_date/{download_date}", ctx -> {
-                String date = ctx.pathParam("download_date");
-                List<Property> list = propertyDAO.findByDownloadDate(date);
-                ctx.json(list);
-            });
-
-
+        }).start(7070);
 
         LOG.info("Server listening on http://localhost:7070");
     }
