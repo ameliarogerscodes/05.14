@@ -10,6 +10,7 @@
     <artifactId>RealEstate</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+
     <properties>
         <!-- if you need to reference this elsewhere -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -32,13 +33,13 @@
             <artifactId>commons-csv</artifactId>
             <version>1.12.0</version>
         </dependency>
-
-        <!-- MongoDB Sync Driver -->
+        <!-- MySQL JDBC driver -->
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
-            <version>4.11.0</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.0.33</version>
         </dependency>
+
     </dependencies>
 
     <!-- (Optional) to run your Main via mvn exec:java -->
