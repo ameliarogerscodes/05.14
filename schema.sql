@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS properties (
     zoning              VARCHAR(10)   NULL,
     strata_lot_number   VARCHAR(50)   NULL,
     property_name       VARCHAR(100)  NULL,
+    id_counter INT DEFAULT 0
 
     FOREIGN KEY (council_id)
     REFERENCES councils(id)

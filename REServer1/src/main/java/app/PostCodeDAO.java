@@ -1,29 +1,43 @@
 package app;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.ReturnDocument;
-import org.bson.Document;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class PostCodeDAO {
-    private final MongoCollection<Document> collection;
+    private final Connection conn;
 
-    public PostCodeDAO(MongoCollection<Document> collection) {
-        this.collection = collection;
+    public PostCodeDAO(Connection conn) {
+        this.conn = conn;
     }
 
-    public int incrementAndReturnCount(String postcode) {
-        Document updated = collection.findOneAndUpdate(
-                new Document("post_code", postcode),
-                new Document("$inc", new Document("search_count", 1)),
-                new FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
-        );
+    public int incrementAndReturnCount(String postcode) throws SQLException {
+        // Try to update existing row
+        String update = "UPDATE postcode_searches SET search_count = search_count + 1 WHERE post_code = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(update)) {
+            stmt.setString(1, postcode);
+            int rows = stmt.executeUpdate();
 
-        return updated.getInteger("search_count", 0);
+            // If no row updated, insert it
+            if (rows == 0) {
+                String insert = "INSERT INTO postcode_searches (post_code, search_count) VALUES (?, 1)";
+                try (PreparedStatement insertStmt = conn.prepareStatement(insert)) {
+                    insertStmt.setString(1, postcode);
+                    insertStmt.executeUpdate();
+                }
+            }
+        }
+
+        return getCount(postcode); // Return updated count
     }
 
-    public int getCount(String postcode) {
-        Document result = collection.find(new Document("post_code", postcode)).first();
-        return result != null ? result.getInteger("search_count", 0) : 0;
+    public int getCount(String postcode) throws SQLException {
+        String query = "SELECT search_count FROM postcode_searches WHERE post_code = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, postcode);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next() ? rs.getInt("search_count") : 0;
+        }
     }
 }

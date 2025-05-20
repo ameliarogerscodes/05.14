@@ -1,0 +1,41 @@
+CREATE TABLE properties (
+    id                  SERIAL PRIMARY KEY,
+    property_id         VARCHAR(20) UNIQUE NOT NULL,
+    address             TEXT,
+    post_code           VARCHAR(10),
+    council_id          INT,
+    property_type_id    INT,
+    area                DECIMAL(10,2),
+    area_type           CHAR(1),
+    zoning              VARCHAR(10),
+    strata_lot_number   VARCHAR(50),
+    property_name       VARCHAR(100),
+    FOREIGN KEY (council_id) REFERENCES councils(id),
+    FOREIGN KEY (property_type_id) REFERENCES property_types(id)
+);
+
+
+CREATE TABLE sales (
+    id                SERIAL PRIMARY KEY,
+    property_id       VARCHAR(20),
+    purchase_price    BIGINT,
+    contract_date     DATE,
+    settlement_date   DATE,
+    download_date     DATE,
+    nature_of_property VARCHAR(10),
+    primary_purpose   VARCHAR(100),
+    legal_description TEXT,
+    FOREIGN KEY (property_id) REFERENCES properties(property_id)
+);
+
+CREATE TABLE councils (
+    id            SERIAL PRIMARY KEY,
+    council_name  VARCHAR(100) UNIQUE
+);
+
+
+CREATE TABLE property_types (
+    id             SERIAL PRIMARY KEY,
+    type_name      VARCHAR(50) UNIQUE
+);
+

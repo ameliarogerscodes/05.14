@@ -1,73 +1,156 @@
 package app;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.*;
-import org.bson.Document;
-import org.bson.conversions.Bson;
+import app.Property;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PropertyDAO {
-    private final MongoCollection<Document> collection;
+    private final Connection conn;
 
-    public PropertyDAO(MongoCollection<Document> collection) {
-        this.collection = collection;
+    public PropertyDAO(Connection conn) {
+        this.conn = conn;
     }
 
-    public Document findByIdAndIncrement(String id) {
-        return collection.findOneAndUpdate(
-                new Document("property_id", id),
-                new Document("$inc", new Document("ID_Counter", 1)),
-                new FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
+    public List<Property> findAll() throws SQLException {
+        String query = "SELECT * FROM properties LIMIT 20";
+        try (PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            List<Property> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(mapRow(rs));
+            }
+            return result;
+        }
+    }
+
+    public Property findById(String propertyId) throws SQLException {
+        String query = "SELECT * FROM properties WHERE property_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, propertyId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                // First map the row
+                Property property = mapRow(rs);
+
+                // Then increment the id_counter
+                incrementIDCount(propertyId);
+
+                return property;
+            } else {
+                return null;
+            }
+        }
+    }
+    private void incrementIDCount(String propertyId) throws SQLException {
+        String update = "UPDATE properties SET id_counter = COALESCE(id_counter, 0) + 1 WHERE property_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(update)) {
+            stmt.setString(1, propertyId);
+            stmt.executeUpdate();
+        }
+    }
+
+
+    public void insert(Property property) throws SQLException {
+        String query = "INSERT INTO properties (property_id, address, post_code, council_id, " +
+                "property_type_id, area, area_type, zoning, strata_lot_number, property_name) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, property.propertyId());
+            stmt.setString(2, property.address());
+            stmt.setString(3, property.postCode());
+            stmt.setObject(4, property.councilId(), Types.INTEGER);
+            stmt.setObject(5, property.propertyTypeId(), Types.INTEGER);
+            stmt.setBigDecimal(6, property.area());
+            stmt.setString(7, property.areaType());
+            stmt.setString(8, property.zoning());
+            stmt.setString(9, property.strataLotNumber());
+            stmt.setString(10, property.propertyName());
+            stmt.executeUpdate();
+        }
+    }
+
+    private Property mapRow(ResultSet rs) throws SQLException {
+        return new Property(
+                rs.getInt("id"),
+                rs.getString("property_id"),
+                rs.getString("address"),
+                rs.getString("post_code"),
+                rs.getObject("council_id", Integer.class),
+                rs.getObject("property_type_id", Integer.class),
+                rs.getBigDecimal("area"),
+                rs.getString("area_type"),
+                rs.getString("zoning"),
+                rs.getString("strata_lot_number"),
+                rs.getString("property_name")
         );
     }
+    public int findIDCount(String propertyId) throws SQLException {
+        String query = "SELECT id_counter FROM properties WHERE property_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, propertyId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next() ? rs.getInt("id_counter") : 0;
+        }
+    }
+    public List<Property> findByPostcode(String postcode) throws SQLException {
+        String query = "SELECT * FROM properties WHERE post_code = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, postcode);
+            ResultSet rs = stmt.executeQuery();
 
-    public List<Document> findAll() {
-        return collection.find().limit(20).into(new ArrayList<>());
+            List<Property> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(mapRow(rs));
+            }
+            return result;
+        }
     }
 
-    public List<Document> findByPostcode(String postcode) {
-        return collection.find(new Document("post_code", postcode)).limit(20).into(new ArrayList<>());
-    }
-    public Document findIDCount(String id) {
-        List<Document> result = collection.aggregate(List.of(
-                Aggregates.match(new Document("property_id", id)),
-                Aggregates.project(Projections.fields(
-                        Projections.include("property_id"),
-                        Projections.excludeId(),
-                        Projections.computed("ID_Counter",
-                                new Document("$ifNull", List.of("$ID_Counter", 0))
-                        )
-                ))
-        )).into(new ArrayList<>());
+    public List<Property> findByDownloadDate(String date) throws SQLException {
+        String query = "SELECT p.* FROM properties p " +
+                "JOIN sales s ON p.property_id = s.property_id " +
+                "WHERE s.download_date = ? " +
+                "LIMIT 100";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, date);
+            ResultSet rs = stmt.executeQuery();
 
-        return result.isEmpty() ? null : result.get(0);
-    }
-
-    public List<Document> findSellerValues() {
-        List<Bson> pipeline = List.of(
-                Aggregates.sample(100),
-                Aggregates.group("$council_name", Accumulators.sum("total_sales", 1)),
-                Aggregates.project(Projections.fields(
-                        Projections.computed("council", "$council_name"),
-                        Projections.computed("total_sales", "$total_sales")
-                ))
-        );
-
-        List<Document> results = new ArrayList<>();
-        collection.aggregate(pipeline).into(results); // ✅ proper call
-        return results;
-    }
-    public List<Document> findByDownloadDate(String date) {
-        return collection
-                .find(new Document("download_date", date))
-                .limit(100)
-                .into(new ArrayList<>());
+            List<Property> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(mapRow(rs));
+            }
+            return result;
+        }
     }
 
-    public void insertOne(Document document) {
-        collection.insertOne(document);
+
+    public List<SellerCount> findSellerValues() throws SQLException {
+        String query = "SELECT c.name AS council, COUNT(*) AS total_sales " +
+                "FROM sales s " +
+                "JOIN properties p ON s.property_id = p.property_id " +
+                "JOIN councils c ON p.council_id = c.id " +
+                "GROUP BY c.name " +
+                "ORDER BY total_sales DESC " +
+                "LIMIT 100";
+
+        try (PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            List<SellerCount> result = new ArrayList<>();
+            while (rs.next()) {
+                result.add(new SellerCount(
+                        rs.getString("council"),
+                        rs.getInt("total_sales")
+                ));
+            }
+            return result;
+        }
     }
+
+
 
 }
