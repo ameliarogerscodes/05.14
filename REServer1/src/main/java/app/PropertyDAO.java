@@ -66,4 +66,8 @@ public class PropertyDAO {
                 .into(new ArrayList<>());
     }
 
+    public void insertOne(Document document) {
+        collection.insertOne(document);
+    }
+
 }

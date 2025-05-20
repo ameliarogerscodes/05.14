@@ -67,11 +67,11 @@ public class REServer {
 //            ctx.json(list);
 //        });
             // create a new sales record
-//            app.post("/post", ctx -> {
-//                Document doc = new Document("property_id", 1);
-//            props.insertOne(doc);
-//            ctx.status(201).json(doc);
-//            });
+            app.post("/post", ctx -> {
+                Document doc = new Document("property_id", 1);
+            propertyDAO.insertOne(doc);
+            ctx.status(201).json(doc);
+            });
             // Get all sales for a specified postcode
             app.get("/sales/postcode/{postcode}", ctx -> {
                 String postcode = ctx.pathParam("postcode");
