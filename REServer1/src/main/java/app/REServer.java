@@ -25,8 +25,8 @@ public class REServer {
         var dao = DAO.getInstance();
         MongoDatabase db = dao.getDatabase();
         // make sure this matches the collection you loaded
-        MongoCollection<Document> props = db.getCollection("properties");
-        MongoCollection<Document> PCount = db.getCollection("Post_Search_Counter");
+        app.PropertyDAO propertyDAO = new app.PropertyDAO(db.getCollection("properties"));
+        app.PostCodeDAO postcodeSearchDAO = new PostCodeDAO(db.getCollection("Post_Search_Counter"));
 
         var app = Javalin.create()
                 .get("/", ctx -> ctx.result("Real Estate server is running"))
@@ -41,94 +41,54 @@ public class REServer {
             // return a sale by sale ID
             app.get("/sales/{ID}", ctx -> {
                 String ID = ctx.pathParam("ID");
-                Document updatedDoc = props.findOneAndUpdate(
-                        new Document("property_id", ID),
-                        new Document("$inc", new Document("ID_Counter", 1)),
-                        new FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
-                );
-
+                Document updatedDoc = propertyDAO.findByIdAndIncrement(ID);
                 ctx.json(updatedDoc);
             });
             app.get("/sales", ctx -> {
-                List<Document> list = props
-                        .find(new Document())
-                        .limit(20)
-                        .into(new ArrayList<>());
+                List<Document> list = propertyDAO.findAll();
                 ctx.json(list);
             });
             app.get("/sales/ID_Count/{ID}", ctx -> {
-                List<Document> result = props.aggregate(List.of(
-                        Aggregates.match(new Document("property_id", ctx.pathParam("ID"))),
-                        Aggregates.project(Projections.fields(
-                                Projections.include("property_id"),
-                                Projections.excludeId(),
-                                Projections.computed("ID_Counter",
-                                        new Document("$ifNull", List.of("$ID_Counter", 0))
-                                )
-                        ))
-                )).into(new ArrayList<>());
+                String ID = ctx.pathParam("ID");
+                Document result = propertyDAO.findIDCount(ID);
                 ctx.json(result);
             });
             app.get("/sales/Post_Count/{post_code}", ctx -> {
                 String postcode = ctx.pathParam("post_code");
 
-                Document result = PCount.find(new Document("post_code", postcode)).first();
-
-                int count = result != null ? result.getInteger("search_count", 0) : 0;
-
-                ctx.json(new Document("post_code", postcode).append("search_count", count));
-                });
+                int result = postcodeSearchDAO.getCount(postcode);
+                ctx.json(new Document("post_code", postcode).append("search_count", result));
 
             });
-            // get all sales records - could be big!
-            app.get("/get", ctx -> {
-                List<Document> list = props
-                    .find(new Document("property_id", 1))
-                    .into(new ArrayList<>());
-            ctx.json(list);
-        });
+//            app.get("/get", ctx -> {
+//                List<Document> list = props
+//                    .find(new Document("property_id", 1))
+//                    .into(new ArrayList<>());
+//            ctx.json(list);
+//        });
             // create a new sales record
-            app.post("/post", ctx -> {
-                Document doc = new Document("property_id", 1);
-            props.insertOne(doc);
-            ctx.status(201).json(doc);
-            });
+//            app.post("/post", ctx -> {
+//                Document doc = new Document("property_id", 1);
+//            props.insertOne(doc);
+//            ctx.status(201).json(doc);
+//            });
             // Get all sales for a specified postcode
             app.get("/sales/postcode/{postcode}", ctx -> {
                 String postcode = ctx.pathParam("postcode");
-                List<Document> list = props
-                        .find(new Document("post_code", postcode))
-                        .limit(20)
-                        .into(new ArrayList<>());
-                Document updateResult = PCount.findOneAndUpdate(
-                        new Document("post_code", postcode),
-                        new Document("$inc", new Document("search_count", 1)),
-                        new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)
-                );
+                List<Document> list = propertyDAO.findByPostcode(postcode);
+                int updateResult = postcodeSearchDAO.incrementAndReturnCount(postcode);
                 ctx.json(list);
             });
 
             app.get("/salesby", ctx -> {
-                List<Bson> pipeline = List.of(
-                        Aggregates.sample(100),
-                        Aggregates.group("$council_name", Accumulators.sum("total_sales", 1)),
-                        Aggregates.project(Projections.fields(
-                                Projections.computed("council", "$council_name"),
-                                Projections.computed("total_sales", "$total_sales")
-                        ))
-                );
-                List<Document> results = new ArrayList<>();
-                props.aggregate(pipeline).into(results);
-
-                ctx.json(results);
+                List<Document> list = propertyDAO.findSellerValues();
+                ctx.json(list);
             });
             app.get("/sales/download_date/{download_date}", ctx -> {
-                String ID = ctx.pathParam("download_date");
-                List<Document> list = props
-                        .find(new Document("download_date", ID))
-                        .limit(100)
-                        .into(new ArrayList<>());
+                String date = ctx.pathParam("download_date");
+                List<Document> list = propertyDAO.findByDownloadDate(date);
                 ctx.json(list);
+            });
 
         });
 
