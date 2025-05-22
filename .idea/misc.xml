@@ -8,6 +8,7 @@
         <option value="$PROJECT_DIR$/AnalyticsServer/pom.xml" />
         <option value="$PROJECT_DIR$/Gateway/pom.xml" />
         <option value="$PROJECT_DIR$/PropertyServer/pom.xml" />
+        <option value="$PROJECT_DIR$/RabbitMQ/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

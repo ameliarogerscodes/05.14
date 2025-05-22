@@ -1,0 +1,5 @@
+app/AnalyticsServer.class
+app/RabbitConsumer.class
+app/IDDAO.class
+app/DAO.class
+app/PostCodeDAO.class

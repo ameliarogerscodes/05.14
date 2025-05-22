@@ -33,19 +33,19 @@ public class Gateway {
                 });
 
         // Sales by Post Code
-        app.get("/sales/Post_Code/{Post_Code}", ctx -> {
+        app.get("/sales/postcode/{postcode}", ctx -> {
 
             // Forward to Property Server
             HttpRequest propertyRequest = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:7071/sales/postcode/" + ctx.pathParam("Post_Code")))
+                    .uri(URI.create("http://localhost:7071/sales/postcode/" + ctx.pathParam("postcode")))
                     .GET()
                     .build();
-            HttpRequest analyticsRequest = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:7072/track/postcode/" + ctx.pathParam("Post_Code")))
-                    .POST(HttpRequest.BodyPublishers.noBody())
-                    .build();
-
-            client.sendAsync(analyticsRequest, HttpResponse.BodyHandlers.discarding());
+//            HttpRequest analyticsRequest = HttpRequest.newBuilder()
+//                    .uri(URI.create("http://localhost:7072/track/postcode/" + ctx.pathParam("Post_Code")))
+//                    .POST(HttpRequest.BodyPublishers.noBody())
+//                    .build();
+//
+//            client.sendAsync(analyticsRequest, HttpResponse.BodyHandlers.discarding());
 
             // Await property data and return to user
             HttpResponse<String> response = client.send(propertyRequest, HttpResponse.BodyHandlers.ofString());
@@ -77,13 +77,6 @@ public class Gateway {
                     .GET()
                     .build();
 
-            // Forward to Analytics Server
-            HttpRequest analyticsRequest = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:7072/track/date/" + ctx.pathParam("download_date")))
-                    .POST(HttpRequest.BodyPublishers.noBody())
-                    .build();
-
-            client.sendAsync(analyticsRequest, HttpResponse.BodyHandlers.discarding());
 
             // Await property data and return to user
             HttpResponse<String> response = client.send(propertyRequest, HttpResponse.BodyHandlers.ofString());
@@ -102,15 +95,15 @@ public class Gateway {
                     .build();
 
             // Tell Analytics Server to increment ID count
-            HttpRequest analyticsRequest = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:7072/track/id/" + id))
-                    .POST(HttpRequest.BodyPublishers.noBody())
-                    .build();
-
-
-
-            // Fire and forget analytics increment
-            client.sendAsync(analyticsRequest, HttpResponse.BodyHandlers.discarding());
+//            HttpRequest analyticsRequest = HttpRequest.newBuilder()
+//                    .uri(URI.create("http://localhost:7072/track/id/" + id))
+//                    .POST(HttpRequest.BodyPublishers.noBody())
+//                    .build();
+//
+//
+//
+//            // Fire and forget analytics increment
+//            client.sendAsync(analyticsRequest, HttpResponse.BodyHandlers.discarding());
 
             // Await property data and return to user
             HttpResponse<String> response = client.send(propertyRequest, HttpResponse.BodyHandlers.ofString());

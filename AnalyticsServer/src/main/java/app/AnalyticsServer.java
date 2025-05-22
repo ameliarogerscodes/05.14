@@ -6,13 +6,13 @@ import io.javalin.config.JavalinConfig;
 
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
-//import src.main.java.app.DAO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
 
-import static org.eclipse.jetty.http.HttpParser.LOG;
 
 public class AnalyticsServer {
+    private static final Logger LOG = LoggerFactory.getLogger(AnalyticsServer.class);
 
     public static void main(String[] args) {
         LOG.info("Starting Real Estate server…");
@@ -22,6 +22,9 @@ public class AnalyticsServer {
         // make sure this matches the collection you loaded
         IDDAO iddao = new IDDAO(db.getCollection("ID_Search_Counter"));
         PostCodeDAO postCodeDAO = new PostCodeDAO(db.getCollection("Post_Search_Counter"));
+        RabbitConsumer.startIDConsumer(iddao);
+        RabbitConsumer.startPostConsumer(postCodeDAO);
+
 
         var app = Javalin.create()
                 .get("/", ctx -> ctx.result("Real Estate server is running"))
@@ -34,23 +37,12 @@ public class AnalyticsServer {
             // Sales records are immutable hence no PUT and DELETE
 
             // return a sale by sale ID
-            app.post("/track/id/{ID}", ctx -> {
-                String ID = ctx.pathParam("ID");
-                int updatedCount = iddao.incrementAndReturnCount(ID);
-                ctx.json(new Document("id", ID).append("search_count", updatedCount));
 
-            });
 
             app.get("/track/ID_Count/{ID}", ctx -> {
                 String ID = ctx.pathParam("ID");
                 int result = iddao.getCount(ID);
                 ctx.json(new Document("id", ID).append("search_count", result));
-            });
-            app.post("/track/postcode/{post_code}", ctx -> {
-                String postcode = ctx.pathParam("post_code");
-
-                ctx.json(new Document("post_code", postcode));
-
             });
 
             // Get all sales for a specified postcode

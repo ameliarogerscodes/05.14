@@ -15,12 +15,8 @@ public class PropertyDAO {
         this.collection = collection;
     }
 
-    public Document findByIdAndIncrement(String id) {
-        return collection.findOneAndUpdate(
-                new Document("property_id", id),
-                new Document("$inc", new Document("ID_Counter", 1)),
-                new FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
-        );
+    public Document findById(String id) {
+        return collection.find(new Document("property_id", id)).first();
     }
 
     public List<Document> findAll() {

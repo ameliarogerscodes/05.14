@@ -16,7 +16,7 @@ public class PostCodeDAO {
         Document updated = collection.findOneAndUpdate(
                 new Document("post_code", postcode),
                 new Document("$inc", new Document("search_count", 1)),
-                new FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
+                new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)
         );
 
         return updated.getInteger("search_count", 0);

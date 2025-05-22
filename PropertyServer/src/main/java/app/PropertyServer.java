@@ -10,12 +10,18 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 public class PropertyServer {
     static final Logger LOG = LoggerFactory.getLogger(PropertyServer.class);
 
     public static void main(String[] args) {
+        HttpClient client = HttpClient.newHttpClient();
+
         LOG.info("Starting Real Estate server…");
 
         var dao = DAO.getInstance();
@@ -35,9 +41,22 @@ public class PropertyServer {
             // return a sale by sale ID
             app.get("/sales/{ID}", ctx -> {
                 String ID = ctx.pathParam("ID");
-                Document updatedDoc = propertyDAO.findByIdAndIncrement(ID);
-                ctx.json(updatedDoc);
+                HttpRequest trackRequest = HttpRequest.newBuilder()
+                        .uri(URI.create("http://localhost:7075/track/id/" + ID))
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+
+
+
+                // Fire and forget analytics increment
+                HttpResponse<Void> response = HttpClient.newHttpClient()
+                        .send(trackRequest, HttpResponse.BodyHandlers.discarding());
+
+                LOG.info("Tracking POST response status: {}", response.statusCode());
+                Document Doc = propertyDAO.findById(ID);
+                ctx.json(Doc);
             });
+
             app.get("/sales", ctx -> {
                 List<Document> list = propertyDAO.findAll();
                 ctx.json(list);
@@ -59,6 +78,15 @@ public class PropertyServer {
             // Get all sales for a specified postcode
             app.get("/sales/postcode/{postcode}", ctx -> {
                 String postcode = ctx.pathParam("postcode");
+                HttpRequest trackRequest = HttpRequest.newBuilder()
+                        .uri(URI.create("http://localhost:7075/track/postcode/" + ctx.pathParam("postcode")))
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+
+                HttpResponse<Void> response = HttpClient.newHttpClient()
+                        .send(trackRequest, HttpResponse.BodyHandlers.discarding());
+
+                LOG.info("Tracking POST response status: {}", response.statusCode());
                 List<Document> list = propertyDAO.findByPostcode(postcode);
                 ctx.json(list);
             });
